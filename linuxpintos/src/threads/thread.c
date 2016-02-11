@@ -288,7 +288,15 @@ thread_exit (void)
   ASSERT (!intr_context ());
 
 #ifdef USERPROG
-  bitmap_destroy(thread_current()->foomap);
+   if(thread_current()->foomap != NULL){
+    int index = 2;
+    index = bitmap_scan(thread_current()->foomap, index, 1, 1);
+    while(index != BITMAP_ERROR){
+      file_close(thread_current()->files[index]);
+      index = bitmap_scan(thread_current()->foomap, index, 1, 1);
+    }
+    bitmap_destroy(thread_current()->foomap);
+  }
   process_exit ();
 #endif
 
