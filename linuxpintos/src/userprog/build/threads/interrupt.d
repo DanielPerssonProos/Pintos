@@ -4,4 +4,5 @@ threads/interrupt.o: ../../threads/interrupt.c ../../threads/interrupt.h \
  ../../lib/stddef.h ../../lib/kernel/stdio.h ../../threads/flags.h \
  ../../threads/intr-stubs.h ../../threads/io.h ../../threads/thread.h \
  ../../lib/kernel/list.h ../../lib/kernel/bitmap.h ../../threads/vaddr.h \
- ../../threads/loader.h ../../devices/timer.h ../../lib/round.h
+ ../../threads/loader.h ../../devices/timer.h ../../lib/round.h \
+ ../../threads/synch.h

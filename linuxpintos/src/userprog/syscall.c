@@ -29,8 +29,8 @@ create_syscall(const char *file, unsigned initial_size){
 
 int 
 write_syscall(int fd, const void *buffer, unsigned size) {
-    unsigned cur_size = size;
-    if(fd == STDOUT_FILENO){
+    if(fd == STDOUT_FILENO){ 
+        unsigned cur_size = size;
 	while(cur_size > 1000) {
 	    putbuf((char*)buffer,(size_t) 1000);
 	    cur_size -= 1000;
@@ -46,18 +46,12 @@ write_syscall(int fd, const void *buffer, unsigned size) {
 }
 
 int
-read_syscall(int fd, void *buffer, unsigned size){
+read_syscall(int fd, char *buffer, unsigned size){
     if(fd == STDIN_FILENO){
-	unsigned size_left = size;
-	char *text[size];
-	char *cur = text;
-	while(size_left > 0){
-	    cur[0] = (char) input_getc();
-	    cur++;
-	    size_left--;
-	}
-	buffer = (void*)text;
-	return size;
+      int i = 0;
+      for (i; i < size; i++)
+	  buffer[i] = input_getc();
+      return size;
     }else if(fd < 130 && fd >= 2 && bitmap_test(thread_current()->foomap, fd)){
 	struct file* read_file = thread_current()->files[fd];
 	return file_read(read_file, buffer, size);
@@ -72,31 +66,24 @@ open_syscall(const char *file){
     if(opened == NULL) {
 	return -1;
     }
-    int fnd = bitmap_scan_and_flip(thread_current()->foomap,2,1,0);
-    //Returns -1 if the bitmap is full.
-    if(fnd != BITMAP_ERROR){
-	thread_current()->files[fnd] = opened;
-	return fnd;
+    int fd = bitmap_scan_and_flip(thread_current()->foomap,2,1,0);
+    if(fd != BITMAP_ERROR){
+	thread_current()->files[fd] = opened;
+	return fd;
     } else {
+        file_close(opened);
 	return -1;
     }
 }
 
 void
 exit_syscall(int status){
-    int index = 2;
-    index = bitmap_scan(thread_current()->foomap, index, 1, 1);
-    while(index != BITMAP_ERROR){
-	close_syscall(index);
-	index = bitmap_scan(thread_current()->foomap, index, 1, 1);
-    }
-    bitmap_set_multiple(thread_current()->foomap, 2, 128, 1);
     thread_exit();
 }
 
 void
 close_syscall(int fd){
-    if(fd >= 2 && bitmap_test(thread_current()->foomap, fd)){
+    if(fd >= 2 && fd < 130 && bitmap_test(thread_current()->foomap, fd)){
 	file_close(thread_current()->files[fd]);
 	bitmap_flip(thread_current()->foomap, fd);
     }
@@ -122,7 +109,7 @@ syscall_handler (struct intr_frame *f)
 	f->eax = result_int;
 	break;
     case SYS_READ:
-	result_int = read_syscall((int)args[1],(void*)args[2],(unsigned)args[3]);
+	result_int = read_syscall((int)args[1],(char*)args[2],(unsigned)args[3]);
 	f->eax = result_int;
 	break;
     case SYS_OPEN:
@@ -138,5 +125,4 @@ syscall_handler (struct intr_frame *f)
     default:
 	break;
     }
-  //thread_exit ();
 }

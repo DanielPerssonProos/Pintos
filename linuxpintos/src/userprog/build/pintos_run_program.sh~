@@ -1,0 +1,6 @@
+#!/bin/bash
+
+export PATH="${HOME}/TDDB68/Pintos/linuxpintos/src/utils/:${PATH}/"
+pintos --qemu -- -f -q
+pintos --qemu -p ../../examples/$0 -a $0 -- -q
+pintos --qemu -- run $0

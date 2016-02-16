@@ -7,6 +7,7 @@
 #include "threads/io.h"
 #include "threads/synch.h"
 #include "threads/thread.h"
+#include "threads/malloc.h"
   
 /* See [8254] for hardware details of the 8254 timer chip. */
 
@@ -29,12 +30,15 @@ static bool too_many_loops (unsigned loops);
 static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
 
+struct list sleeping_threads;
+
 /* Sets up the 8254 Programmable Interval Timer (PIT) to
    interrupt PIT_FREQ times per second, and registers the
    corresponding interrupt. */
 void
 timer_init (void) 
 {
+  list_init (&sleeping_threads);
   /* 8254 input frequency divided by TIMER_FREQ, rounded to
      nearest. */
   uint16_t count = (1193180 + TIMER_FREQ / 2) / TIMER_FREQ;
@@ -93,28 +97,35 @@ timer_elapsed (int64_t then)
 }
 
 /* Suspends execution for approximately TICKS timer ticks. */
-/*HERE IT IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIS!!!!!!!!!!!!!!!!!!!!
 
-
-
-
-
-
-
-
-
-
-
-
-*/
 void
 timer_sleep (int64_t ticks) 
 {
   int64_t start = timer_ticks ();
-
   ASSERT (intr_get_level () == INTR_ON);
-  while (timer_elapsed (start) < ticks) 
-    thread_yield ();
+
+  /* struct semaphore s; */
+  /* sema_init(&s, 0); */
+  //printf("%d", s.value);
+
+
+  enum intr_level old_level;
+  old_level = intr_disable ();
+
+  int64_t unblock_time = start + ticks;
+ 
+  struct sleeping_thread sleeper;// = {e, unblock_time, s};// = malloc(sizeof *sleeper);
+  sema_init(&sleeper.s, 0);
+  sleeper.wakeup_time = unblock_time;
+  //sleeper->wakeup_time = unblock_time;
+  //sleeper->s = s;
+  list_push_back(&sleeping_threads,&sleeper.elem);
+
+  intr_set_level (old_level);
+
+  sema_down(&sleeper.s);
+
+  
 }
 
 /* Suspends execution for approximately MS milliseconds. */
@@ -151,6 +162,24 @@ timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
   thread_tick ();
+ 
+  enum intr_level old_level;
+  old_level = intr_disable ();
+
+  struct list_elem *e;
+  for(e = list_begin (&sleeping_threads); e != list_end(&sleeping_threads);) {
+    struct sleeping_thread *sleeper = list_entry(e, struct sleeping_thread, elem);
+    printf("%d", list_size(&sleeping_threads));
+    if (sleeper->wakeup_time >= timer_ticks()) {
+      printf("Waking up %d \n",sleeper->wakeup_time);
+      sema_up(&(sleeper->s));
+      //printf("%d", sleeper->s.value);
+      e = list_remove(e);
+    }else{
+      e = list_next(e);
+    }
+  }
+  intr_set_level (old_level);
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer
