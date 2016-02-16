@@ -29,7 +29,11 @@ create_syscall(const char *file, unsigned initial_size){
 
 int 
 write_syscall(int fd, const void *buffer, unsigned size) {
+<<<<<<< HEAD
     if(fd == STDOUT_FILENO){ 
+=======
+    if(fd == STDOUT_FILENO){
+>>>>>>> 66fd1f80f5a37b19f1c445facc5b2bae5c59d24d
         unsigned cur_size = size;
 	while(cur_size > 1000) {
 	    putbuf((char*)buffer,(size_t) 1000);
@@ -66,6 +70,7 @@ open_syscall(const char *file){
     if(opened == NULL) {
 	return -1;
     }
+<<<<<<< HEAD
     int fd = bitmap_scan_and_flip(thread_current()->foomap,2,1,0);
     if(fd != BITMAP_ERROR){
 	thread_current()->files[fd] = opened;
@@ -73,6 +78,15 @@ open_syscall(const char *file){
     } else {
         file_close(opened);
 	return -1;
+=======
+    int fnd = bitmap_scan_and_flip(thread_current()->foomap,2,1,0);
+    if(fnd != BITMAP_ERROR){
+	thread_current()->files[fnd] = opened;
+	return fnd;
+    } else {
+      file_close(opened);
+      return -1;
+>>>>>>> 66fd1f80f5a37b19f1c445facc5b2bae5c59d24d
     }
 }
 

@@ -97,6 +97,7 @@ timer_elapsed (int64_t then)
 }
 
 /* Suspends execution for approximately TICKS timer ticks. */
+<<<<<<< HEAD
 
 void
 timer_sleep (int64_t ticks) 
@@ -120,12 +121,39 @@ timer_sleep (int64_t ticks)
   //sleeper->wakeup_time = unblock_time;
   //sleeper->s = s;
   list_push_back(&sleeping_threads,&sleeper.elem);
+=======
+>>>>>>> 66fd1f80f5a37b19f1c445facc5b2bae5c59d24d
 
   intr_set_level (old_level);
 
+<<<<<<< HEAD
   sema_down(&sleeper.s);
 
   
+=======
+struct list sleeping_threads;
+/*
+list_init (&sleeping_threads);
+*/
+void
+timer_sleep (int64_t ticks) 
+{
+  /*
+  int64_t start = timer_ticks ();
+  ASSERT (intr_get_level () == INTR_ON);
+
+  enum intr_level old_level;
+  old_level = intr_disable ();
+
+  int64_t unblock_time = start + ticks;
+  thread_block();
+  struct list_elem e;
+  struct sleeping_thread sleeper{e,unblock_time, thread_current()};
+  list_push_back(&sleeping_threads,&(sleeper.elem));
+
+  intr_set_level (old_level);
+  */
+>>>>>>> 66fd1f80f5a37b19f1c445facc5b2bae5c59d24d
 }
 
 /* Suspends execution for approximately MS milliseconds. */
@@ -162,6 +190,7 @@ timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
   thread_tick ();
+<<<<<<< HEAD
  
   enum intr_level old_level;
   old_level = intr_disable ();
@@ -180,6 +209,18 @@ timer_interrupt (struct intr_frame *args UNUSED)
     }
   }
   intr_set_level (old_level);
+=======
+  /*
+  struct list_elem *e; // = list_head(&sleeping_threads);
+  for(e = list_begin (&sleeping_threads); e != list_end (&sleeping_threads);e = list_next (e)) {
+    struct sleeping_thread sleeper = list_entry(e, struct sleeping_thread, elem);
+    if (sleeper.wakeup_time >= timer_ticks()) {
+      unblock_thread(sleeper.t);
+      list_remove(e);
+    }
+  }
+  */
+>>>>>>> 66fd1f80f5a37b19f1c445facc5b2bae5c59d24d
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer

@@ -288,8 +288,12 @@ thread_exit (void)
   ASSERT (!intr_context ());
   
 #ifdef USERPROG
+<<<<<<< HEAD
   
   if(thread_current()->foomap != NULL){
+=======
+   if(thread_current()->foomap != NULL){
+>>>>>>> 66fd1f80f5a37b19f1c445facc5b2bae5c59d24d
     int index = 2;
     index = bitmap_scan(thread_current()->foomap, index, 1, 1);
     while(index != BITMAP_ERROR){
@@ -298,7 +302,10 @@ thread_exit (void)
     }
     bitmap_destroy(thread_current()->foomap);
   }
+<<<<<<< HEAD
  
+=======
+>>>>>>> 66fd1f80f5a37b19f1c445facc5b2bae5c59d24d
   process_exit ();
 #endif
 
