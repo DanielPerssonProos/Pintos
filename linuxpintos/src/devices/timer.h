@@ -5,10 +5,9 @@
 #include <stdint.h>
 #include "list.h"
 #include "threads/thread.h"
-<<<<<<< HEAD
+
 #include "threads/synch.h"
-=======
->>>>>>> 66fd1f80f5a37b19f1c445facc5b2bae5c59d24d
+
 
 /* Number of timer interrupts per second. */
 #define TIMER_FREQ 100
@@ -27,19 +26,14 @@ void timer_nsleep (int64_t nanoseconds);
 void timer_print_stats (void);
 
 
-struct sleeping_thread{
-  struct list_elem elem;
-  uint64_t wakeup_time;
-  struct thread* t;
-};
-
-
-
-#endif /* devices/timer.h */
-
 struct sleeping_thread
 {
   struct list_elem elem;
   int64_t wakeup_time;
-  struct semaphore s;
+  struct thread* t;
 };
+
+
+#endif /* devices/timer.h */
+
+

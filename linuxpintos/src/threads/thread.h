@@ -91,10 +91,11 @@ struct thread
     int priority;                       /* Priority. */
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
-    struct bitmap* foomap;
-    struct file* files[128];
+   
 
 #ifdef USERPROG
+    struct bitmap* foomap;
+    struct file* files[128];
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
 #endif

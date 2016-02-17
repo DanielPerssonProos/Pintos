@@ -6,18 +6,9 @@ threads/init.o: ../../threads/init.c ../../threads/init.h \
  ../../devices/kbd.h ../../devices/input.h ../../devices/serial.h \
  ../../devices/timer.h ../../lib/round.h ../../lib/kernel/list.h \
  ../../threads/thread.h ../../lib/kernel/bitmap.h ../../lib/inttypes.h \
-<<<<<<< HEAD
  ../../threads/synch.h ../../devices/vga.h ../../threads/interrupt.h \
  ../../threads/io.h ../../threads/loader.h ../../threads/malloc.h \
  ../../threads/palloc.h ../../threads/pte.h ../../threads/vaddr.h \
  ../../userprog/process.h ../../userprog/exception.h ../../userprog/gdt.h \
  ../../userprog/syscall.h ../../userprog/tss.h ../../devices/disk.h \
  ../../filesys/filesys.h ../../filesys/off_t.h ../../filesys/fsutil.h
-=======
- ../../devices/vga.h ../../threads/interrupt.h ../../threads/io.h \
- ../../threads/loader.h ../../threads/malloc.h ../../threads/palloc.h \
- ../../threads/pte.h ../../threads/vaddr.h ../../userprog/process.h \
- ../../userprog/exception.h ../../userprog/gdt.h ../../userprog/syscall.h \
- ../../userprog/tss.h ../../devices/disk.h ../../filesys/filesys.h \
- ../../filesys/off_t.h ../../filesys/fsutil.h
->>>>>>> 66fd1f80f5a37b19f1c445facc5b2bae5c59d24d
