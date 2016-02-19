@@ -76,8 +76,25 @@ open_syscall(const char *file){
     }
 }
 
+pid_t
+exec_syscall(const char *cmd_line){
+  tid_t thread_id = process_execute(cmd_line);
+  if(thread_id != TID_ERROR){
+    return thread_id;
+  }else{
+    return -1;
+  }
+}
+
+int
+wait_syscall(pid_t pid){
+  int exit_status = process_wait(pid);
+  return exit_status;
+}
+
+
 void
-exit_syscall(int status){
+exit_syscall(){
     thread_exit();
 }
 
@@ -98,36 +115,38 @@ syscall_handler (struct intr_frame *f)
     bool result_bool;
     switch(call){
     case SYS_HALT:
-	printf("Running halt \n");
 	halt_syscall();
 	break;
     case SYS_CREATE:
-	printf("Running create \n");
 	result_bool = create_syscall((char*)args[1],(unsigned)args[2]);
 	f->eax = result_bool;
 	break;
     case SYS_WRITE:
-	printf("Running write \n");
 	result_int = write_syscall((int)args[1],(void*)args[2],(unsigned)args[3]);
 	f->eax = result_int;
 	break;
     case SYS_READ:
-	printf("Running read \n");
 	result_int = read_syscall((int)args[1],(char*)args[2],(unsigned)args[3]);
 	f->eax = result_int;
 	break;
     case SYS_OPEN:
-	printf("Running open \n");
 	result_int = open_syscall((char*)args[1]);
 	f->eax = result_int;
 	break;
     case SYS_CLOSE:
-	printf("Running close \n");
 	close_syscall((int)args[1]);
 	break;
+    case SYS_EXEC:
+        result_int = exec_syscall((char*)args[1]);
+	f->eax = result_int;
+	break;
+    case SYS_WAIT:
+        result_int = wait_syscall((pid_t)args[1]);
+        f->eax = result_int;
+        break;
     case SYS_EXIT:
-	printf("Running exit \n");
-	exit_syscall((int)args[1]);
+        exit_syscall();
+	f->eax = (int)args[1];
 	break;
     default:
 	break;

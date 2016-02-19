@@ -1,0 +1,44 @@
+wait:
+
+Parent must retrieve child's exit status, or learn that the child was terminated by the kernel.
+
+Must return -1 if:
+	1. the pid is not of a child to the parent. Which it is only if the calling process recieved pid as a return 		value from a successful call to exec.
+	
+	If A -> B -> C then A can't wait for C, even if B is dead. If A calls wait(C) it must fail. Children does not 		get a new parent even if their parent dies.
+	
+	2. If the same process calls wait has already called wait on the same pid, can only wait for a given child 		once.
+
+
+TODO:
+	Implement "process_wait()" according to the comment at the top of the function. (Located at 'userprog
+	/process.c')
+
+Give each thread a semaphore
+as a reference to the parent.
+Sema_up on thread_exit to wake parent.
+________________________
+A -> B
+A -> C
+
+sema_down(A);
+A.wait(B);
+
+
+--- sema_up(B);
+--- B.thread_exit();
+_________________________
+
+
+
+process_wait solution:
+_________________________
+Linked list in parent_process containing structs with semaphore and tid to child process.
+All children will get reference to parents' semaphore on create, so that sema_up can be called
+on thread_exit.
+ 
+
+In Parent Process Wait:
+	if bool thread_has_finished is true:
+		we dont wait, and we remove the thread from our list.
+
