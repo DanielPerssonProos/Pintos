@@ -3,11 +3,14 @@ wait:
 Parent must retrieve child's exit status, or learn that the child was terminated by the kernel.
 
 Must return -1 if:
-	1. the pid is not of a child to the parent. Which it is only if the calling process recieved pid as a return 		value from a successful call to exec.
+	1. the pid is not of a child to the parent. Which it is only if the calling process recieved pid as a return 		
+	value from a successful call to exec.
 	
-	If A -> B -> C then A can't wait for C, even if B is dead. If A calls wait(C) it must fail. Children does not 		get a new parent even if their parent dies.
+	If A -> B -> C then A can't wait for C, even if B is dead. If A calls wait(C) it must fail. Children does not 		
+	get a new parent even if their parent dies.
 	
-	2. If the same process calls wait has already called wait on the same pid, can only wait for a given child 		once.
+	2. If the same process calls wait has already called wait on the same pid, can only wait for a given child 		
+	once.
 
 
 TODO:
@@ -41,4 +44,15 @@ on thread_exit.
 In Parent Process Wait:
 	if bool thread_has_finished is true:
 		we dont wait, and we remove the thread from our list.
+
+Struct
+___________
+tid 
+semaphore
+ref_cnt (Lock runt dekrementering) (deallokera minne vid ref_cnt == 0)
+exit_status
+
+använd aux för att skicka en pekare till strukten i start_process
+
+ta bort child processer ur listan efter wait
 

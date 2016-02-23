@@ -76,9 +76,9 @@ open_syscall(const char *file){
     }
 }
 
-pid_t
+int
 exec_syscall(const char *cmd_line){
-  tid_t thread_id = process_execute(cmd_line);
+  int thread_id = process_execute(cmd_line);
   if(thread_id != TID_ERROR){
     return thread_id;
   }else{
@@ -87,7 +87,7 @@ exec_syscall(const char *cmd_line){
 }
 
 int
-wait_syscall(pid_t pid){
+wait_syscall(int pid){
   int exit_status = process_wait(pid);
   return exit_status;
 }
@@ -141,7 +141,7 @@ syscall_handler (struct intr_frame *f)
 	f->eax = result_int;
 	break;
     case SYS_WAIT:
-        result_int = wait_syscall((pid_t)args[1]);
+        result_int = wait_syscall((int)args[1]);
         f->eax = result_int;
         break;
     case SYS_EXIT:
