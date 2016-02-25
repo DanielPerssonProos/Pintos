@@ -40,24 +40,25 @@ process_execute (const char *file_name)
   strlcpy (fn_copy, file_name, PGSIZE);
 
   /* Create a new thread to execute FILE_NAME. */
-  struct child_process* child = malloc(sizeof(struct* child_process));
-  child.file_name = file_name;
-  sema_init(&child.s,0);
+  struct child_process* child = malloc(sizeof(struct child_process*));
+  child->file_name = file_name;
+  sema_init(&child->s,0);
   
-  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+  tid = thread_create (file_name, PRI_DEFAULT, start_process, &child);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
-  child.tid = tid;
-  list_push_back(child_processes,&child.elem);
+  child->tid = tid;
+  list_push_back(child_processes,&child->elem);
   return tid;
 }
 
 /* A thread function that loads a user process and starts it
    running. */
 static void
-start_process (void *file_name_)
+start_process (void *ref)
 {
-  char *file_name = file_name_;
+  reference = ref;
+  char *file_name = reference->file_name;
   struct intr_frame if_;
   bool success;
 
@@ -93,9 +94,27 @@ start_process (void *file_name_)
    This function will be implemented in problem 2-2.  For now, it
    does nothing. */
 int
-process_wait (tid_t child_tid UNUSED) 
+process_wait (tid_t child_tid) 
 {
-    while(true){}
+	int exit_status;
+	struct child_process *child;
+	struct list_elem *e = list_begin(&child_processes);
+	child = list_entry (e, struct child_process, elem);
+	while (child->tid != child_tid) {
+		e = list_next(e);
+		if (e == list_end(&child_processes)) {
+			return -1;
+		} else {
+			child = list_entry (e, struct child_process, elem);
+		}
+	}
+	if(child->ref > 1){
+		sema_down(&child->s);
+	}	
+	list_remove(e);
+	exit_status = child->exit_status;
+	free(child);
+		
 }
 
 /* Free the current process's resources. */
@@ -104,7 +123,25 @@ process_exit (void)
 {
   struct thread *cur = thread_current ();
   uint32_t *pd;
+	
+	if(reference != NULL){
+		if(reference->ref_cnt <= 1){
+			free(reference);
+		} else {
+			reference->ref_cnt--;
+		}
+		sema_up(reference->s);
+	}
 
+	struct list_elem* e;
+	for(e = list_begin(&cur->child_processes); e != list_end(&cur->child_processes); e = list_next(e)){
+		struct child_process* child = list_entry(e, struct child_process, elem);
+		if(child->ref_cnt <= 1){
+			free(child);
+		} else {
+			child->ref_cnt--;
+		}
+	}
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;

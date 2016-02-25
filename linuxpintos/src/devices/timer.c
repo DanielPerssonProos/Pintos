@@ -149,7 +149,7 @@ timer_print_stats (void)
 
 /* Timer interrupt handler. */
 static void
-timer_interrupt (struct intr_frame *args UNUSED)
+timer_interrupt (struct intr_frame *args)
 {
   ticks++;
   thread_tick ();

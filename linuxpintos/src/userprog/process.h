@@ -18,6 +18,6 @@ struct child_process {
     int exit_status;
     struct list_elem elem;
 };
-
+struct child_process *reference;
 struct list *child_processes;
 #endif /* userprog/process.h */
