@@ -5,6 +5,7 @@
 #include <list.h>
 #include <stdint.h>
 #include "lib/kernel/bitmap.h"
+#include "threads/synch.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -96,6 +97,8 @@ struct thread
 #ifdef USERPROG
     struct bitmap* foomap;
     struct file* files[128];
+	 struct child_process *reference;
+	 struct list *child_processes;
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
 #endif
@@ -103,6 +106,15 @@ struct thread
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
   };
+
+struct child_process {
+    char *file_name;
+    tid_t tid;
+    struct semaphore s;
+    unsigned ref_cnt;
+    int exit_status;
+    struct list_elem elem;
+};
 
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.

@@ -17,7 +17,7 @@ syscall_init (void)
 
 
 void
-halt_syscall(){
+halt_syscall(void){
     power_off();
 }
 
@@ -94,7 +94,8 @@ wait_syscall(int pid){
 
 
 void
-exit_syscall(){
+exit_syscall(int exit_status){
+	thread_current()->reference->exit_status = exit_status;
     thread_exit();
 }
 
@@ -130,23 +131,22 @@ syscall_handler (struct intr_frame *f)
 	f->eax = result_int;
 	break;
     case SYS_OPEN:
-	result_int = open_syscall((char*)args[1]);
-	f->eax = result_int;
+		result_int = open_syscall((char*)args[1]);
+		f->eax = result_int;
 	break;
     case SYS_CLOSE:
-	close_syscall((int)args[1]);
+		close_syscall((int)args[1]);
 	break;
     case SYS_EXEC:
-        result_int = exec_syscall((char*)args[1]);
-	f->eax = result_int;
+      result_int = exec_syscall((char*)args[1]);
+		f->eax = result_int;
 	break;
     case SYS_WAIT:
         result_int = wait_syscall((int)args[1]);
         f->eax = result_int;
         break;
     case SYS_EXIT:
-        exit_syscall();
-	f->eax = (int)args[1];
+        exit_syscall((int)args[1]);
 	break;
     default:
 	break;

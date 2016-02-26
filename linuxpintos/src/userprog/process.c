@@ -43,12 +43,13 @@ process_execute (const char *file_name)
   struct child_process* child = malloc(sizeof(struct child_process*));
   child->file_name = file_name;
   sema_init(&child->s,0);
+  child->exit_status = -1;
   
   tid = thread_create (file_name, PRI_DEFAULT, start_process, &child);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
   child->tid = tid;
-  list_push_back(child_processes,&child->elem);
+  list_push_back(thread_current()->child_processes,&child->elem);
   return tid;
 }
 
@@ -57,8 +58,8 @@ process_execute (const char *file_name)
 static void
 start_process (void *ref)
 {
-  reference = ref;
-  char *file_name = reference->file_name;
+  thread_current()->reference = ref;
+  char *file_name = thread_current()->reference->file_name;
   struct intr_frame if_;
   bool success;
 
@@ -98,23 +99,23 @@ process_wait (tid_t child_tid)
 {
 	int exit_status;
 	struct child_process *child;
-	struct list_elem *e = list_begin(&child_processes);
+	struct list_elem *e = list_begin(&thread_current()->child_processes);
 	child = list_entry (e, struct child_process, elem);
 	while (child->tid != child_tid) {
 		e = list_next(e);
-		if (e == list_end(&child_processes)) {
+		if (e == list_end(&thread_current()->child_processes)) {
 			return -1;
 		} else {
 			child = list_entry (e, struct child_process, elem);
 		}
 	}
-	if(child->ref > 1){
+	if(child->ref_cnt > 1){
 		sema_down(&child->s);
 	}	
 	list_remove(e);
 	exit_status = child->exit_status;
 	free(child);
-		
+	return exit_status;
 }
 
 /* Free the current process's resources. */
@@ -124,24 +125,7 @@ process_exit (void)
   struct thread *cur = thread_current ();
   uint32_t *pd;
 	
-	if(reference != NULL){
-		if(reference->ref_cnt <= 1){
-			free(reference);
-		} else {
-			reference->ref_cnt--;
-		}
-		sema_up(reference->s);
-	}
 
-	struct list_elem* e;
-	for(e = list_begin(&cur->child_processes); e != list_end(&cur->child_processes); e = list_next(e)){
-		struct child_process* child = list_entry(e, struct child_process, elem);
-		if(child->ref_cnt <= 1){
-			free(child);
-		} else {
-			child->ref_cnt--;
-		}
-	}
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;
@@ -265,10 +249,25 @@ load (const char *file_name, void (**eip) (void), void **esp)
     goto done;
   process_activate ();
 
+
+
+  /*Parsing the file_name given, using strtok_r() in lib/string.[ch]*/
+	char *s = file_name;
+	char *token, *save_ptr;
+	void **argv;
+	int argc = 0;
+	for(token = strtok_r(s, " ", &save_ptr); token != NULL; token = strtok_r (NULL, " ", &save_ptr)){
+		argv[argc] = token;
+		argc++;
+	}
   /* Set up stack. */
   if (!setup_stack (esp)){
     goto done;
   }
+	/*TODO Add shit on the stack yo!
+
+
+
 
    /* Uncomment the following line to print some debug
      information. This will be useful when you debug the program
@@ -520,7 +519,7 @@ setup_stack (void **esp)
     {
       success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
       if (success)
-        *esp = PHYS_BASE - 12;
+        *esp = PHYS_BASE;
       else
         palloc_free_page (kpage);
     }

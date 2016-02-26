@@ -298,7 +298,26 @@ thread_exit (void)
       index = bitmap_scan(thread_current()->foomap, index, 1, 1);
     }
     bitmap_destroy(thread_current()->foomap);
-  }
+	}
+	if(thread_current()->reference != NULL){
+		if(thread_current()->reference->ref_cnt <= 1){
+			free(thread_current()->reference);
+		} else {
+			thread_current()->reference->ref_cnt--;
+		}
+		sema_up(&thread_current()->reference->s);
+	}
+
+	struct list_elem* e;
+	for(e = list_begin(&thread_current()->child_processes); e != list_end(&thread_current()->child_processes); 
+		e = list_next(e)){
+		struct child_process* child = list_entry(e, struct child_process, elem);
+		if(child->ref_cnt <= 1){
+			free(child);
+		} else {
+			child->ref_cnt--;
+		}
+	}
   process_exit ();
 #endif
 
