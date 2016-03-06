@@ -31,7 +31,7 @@ process_execute (const char *file_name)
 {
   char *fn_copy;
   tid_t tid;
-
+	printf("name: %s\n", file_name);
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
   fn_copy = palloc_get_page (0);
@@ -44,12 +44,15 @@ process_execute (const char *file_name)
   child->file_name = file_name;
   sema_init(&child->s,0);
   child->exit_status = -1;
-  
-  tid = thread_create (file_name, PRI_DEFAULT, start_process, &child);
+  child->ref_cnt = 2;
+  tid = thread_create (file_name, PRI_DEFAULT, start_process, child);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
   child->tid = tid;
-  list_push_back(thread_current()->child_processes,&child->elem);
+  list_push_back(&thread_current()->child_processes,&child->elem);
+	if(thread_current()->reference == NULL){
+		printf("init.c -> process_execute: childname == %s\n", child->file_name);	
+	}
   return tid;
 }
 
@@ -60,6 +63,7 @@ start_process (void *ref)
 {
   thread_current()->reference = ref;
   char *file_name = thread_current()->reference->file_name;
+  printf("Start process file name: %s\n", file_name);
   struct intr_frame if_;
   bool success;
 
@@ -68,8 +72,8 @@ start_process (void *ref)
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
-  success = load (file_name, &if_.eip, &if_.esp);
 
+  success = load (file_name, &if_.eip, &if_.esp);
   /* If load failed, quit. */
   palloc_free_page (file_name);
   if (!success) 
@@ -98,9 +102,13 @@ int
 process_wait (tid_t child_tid) 
 {
 	int exit_status;
+
 	struct child_process *child;
 	struct list_elem *e = list_begin(&thread_current()->child_processes);
-	child = list_entry (e, struct child_process, elem);
+	if (e == list_end(&thread_current()->child_processes)) {
+		return -1;
+	}
+	child = list_entry(e, struct child_process, elem);
 	while (child->tid != child_tid) {
 		e = list_next(e);
 		if (e == list_end(&thread_current()->child_processes)) {
@@ -109,9 +117,18 @@ process_wait (tid_t child_tid)
 			child = list_entry (e, struct child_process, elem);
 		}
 	}
+	if(thread_current()->reference == NULL){
+		printf("init.c -> process_execute -> process_wait: childname == %s\n", child->file_name);	
+	}
 	if(child->ref_cnt > 1){
+		if(thread_current()->reference == NULL){
+			printf("init.c -> going to sleep: childname == %s\n", child->file_name);	
+		}
 		sema_down(&child->s);
-	}	
+	}
+	if(thread_current()->reference == NULL){
+		printf("init.c -> going to sleep: childname == %s\n", child->file_name);	
+	}
 	list_remove(e);
 	exit_status = child->exit_status;
 	free(child);
@@ -123,6 +140,10 @@ void
 process_exit (void)
 {
   struct thread *cur = thread_current ();
+  if(thread_current()->reference != NULL){
+	 printf("process_exit: myname == %s\n", thread_current()->reference->file_name);	
+  }
+
   uint32_t *pd;
 	
 
@@ -236,6 +257,7 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
 bool
 load (const char *file_name, void (**eip) (void), void **esp) 
 {
+	
   struct thread *t = thread_current ();
   struct Elf32_Ehdr ehdr;
   struct file *file = NULL;
@@ -251,23 +273,52 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
 
 
-  /*Parsing the file_name given, using strtok_r() in lib/string.[ch]*/
-	char *s = file_name;
-	char *token, *save_ptr;
-	void **argv;
-	int argc = 0;
-	for(token = strtok_r(s, " ", &save_ptr); token != NULL; token = strtok_r (NULL, " ", &save_ptr)){
-		argv[argc] = token;
-		argc++;
-	}
   /* Set up stack. */
   if (!setup_stack (esp)){
     goto done;
   }
 	/*TODO Add shit on the stack yo!
 
+  /*Parsing the file_name given, using strtok_r() in lib/string.[ch]*/
+	char* arg_adr[32];
+	
+	void** esp_cpy = esp;
+	char *s = file_name;
+	char *token, *save_ptr;
+	int argc = 0;
+	char* char_esp = (char*) *esp_cpy;
+	for(token = strtok_r(s, " ", &save_ptr); token != NULL; token = strtok_r (NULL, " ", &save_ptr)){
+		strlcat(token, "\0", strlen("\0"));
+		char_esp -= strlen(token)+1;
+		strlcpy(char_esp, token, strlen(token)+1);
+		arg_adr[argc] = char_esp;
+		argc++;
+	}
+
+	char_esp -= (uint32_t)char_esp%4;
+	char_esp -= sizeof(char*);
+	*char_esp = NULL;
+	char** char_ptr_esp = (char**) char_esp;
+	int temp = argc-1;
+	while (temp >= 0) {
+		char_ptr_esp--;
+		*char_ptr_esp = arg_adr[temp--];
+	}
+	char** argv_start = char_ptr_esp;
+	char_ptr_esp--;
+	*char_ptr_esp = (char*) argv_start;
+	
+
+	char_ptr_esp--;
+	int* int_esp = (int*)char_ptr_esp;
+	*int_esp = argc;
+
+	void** void_esp = (void**) int_esp;
+	void_esp--;
+	*void_esp = NULL;
 
 
+	esp = (void**) &void_esp;
 
    /* Uncomment the following line to print some debug
      information. This will be useful when you debug the program
@@ -308,6 +359,8 @@ load (const char *file_name, void (**eip) (void), void **esp)
 #endif
 
   /* Open executable file. */
+
+		printf("LOADING: '%s'\n\n\n", file_name);
   file = filesys_open (file_name);
   if (file == NULL) 
     {

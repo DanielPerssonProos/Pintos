@@ -85,10 +85,11 @@ void
 thread_init (void) 
 {
   ASSERT (intr_get_level () == INTR_OFF);
-
+	
+  
+	
   lock_init (&tid_lock);
   list_init (&ready_list);
-  
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
@@ -286,6 +287,7 @@ thread_tid (void)
 void
 thread_exit (void) 
 {
+	printf("THREAD EXITING!\n");
   ASSERT (!intr_context ());
   
 #ifdef USERPROG
@@ -299,6 +301,7 @@ thread_exit (void)
     }
     bitmap_destroy(thread_current()->foomap);
 	}
+
 	if(thread_current()->reference != NULL){
 		if(thread_current()->reference->ref_cnt <= 1){
 			free(thread_current()->reference);
@@ -309,15 +312,18 @@ thread_exit (void)
 	}
 
 	struct list_elem* e;
-	for(e = list_begin(&thread_current()->child_processes); e != list_end(&thread_current()->child_processes); 
-		e = list_next(e)){
+	for(e = list_begin(&thread_current()->child_processes); e != list_end(&thread_current()->child_processes);){
 		struct child_process* child = list_entry(e, struct child_process, elem);
 		if(child->ref_cnt <= 1){
+			printf("Thread exit remove\n");
+			e = list_remove(e);
 			free(child);
 		} else {
 			child->ref_cnt--;
+			e = list_next(e);
 		}
 	}
+
   process_exit ();
 #endif
 
@@ -480,6 +486,9 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
+
+  list_init(&t->child_processes);
+
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and

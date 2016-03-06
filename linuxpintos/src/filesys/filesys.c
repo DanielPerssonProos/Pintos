@@ -67,6 +67,7 @@ filesys_create (const char *name, off_t initial_size)
 struct file *
 filesys_open (const char *name)
 {
+	printf("OPENING\n\n");
   struct dir *dir = dir_open_root ();
   struct inode *inode = NULL;
 

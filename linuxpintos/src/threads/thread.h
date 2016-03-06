@@ -98,7 +98,7 @@ struct thread
     struct bitmap* foomap;
     struct file* files[128];
 	 struct child_process *reference;
-	 struct list *child_processes;
+	 struct list child_processes;
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
 #endif

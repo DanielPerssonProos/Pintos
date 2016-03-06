@@ -78,6 +78,7 @@ open_syscall(const char *file){
 
 int
 exec_syscall(const char *cmd_line){
+  printf("%d", cmd_line);
   int thread_id = process_execute(cmd_line);
   if(thread_id != TID_ERROR){
     return thread_id;
